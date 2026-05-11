@@ -67,7 +67,7 @@ PR review timelines: we aim to respond within 5 business days during the draft p
 
 ### Discussing big ideas
 
-For larger discussions that are not yet ready to be issues or PRs, open a [discussion](https://github.com/aircp-org/aircp-spec/discussions) or reach out to spec@aircp.org.
+For larger discussions that are not yet ready to be issues or PRs, open a [discussion](https://github.com/aircp-org/aircp-spec/discussions). 
 
 ---
 
@@ -75,7 +75,7 @@ For larger discussions that are not yet ready to be issues or PRs, open a [discu
 
 Be civil. Be specific. Critique the spec, not the people.
 
-We expect contributors to follow the standards of the [Contributor Covenant](https://www.contributor-covenant.org/). Concerns can be reported to spec@aircp.org.
+We expect contributors to follow the standards of the [Contributor Covenant](https://www.contributor-covenant.org/). Concerns can be reported to **GitHub Issues:** https://github.com/aircp-org/aircp-spec/issues
 
 ---
 
