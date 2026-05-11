@@ -18,11 +18,11 @@
 
 ## Abstract
 
-AIRCP — AI-Readable Catalog Protocol — is an open specification that defines how online product catalogs should be structured to be discoverable, parseable, and transactable by AI agents. AIRCP is to commerce what MCP (Model Context Protocol) is to AI tool use: a thin, semantic, agent-friendly layer over the existing commerce internet.
+AIRCP — AI-Readable Catalog Protocol — is an open specification that defines the **catalog semantic layer** of agentic commerce: how online product catalogs should be structured so AI agents can discover, parse, and reason about products with the depth required for taste-driven recommendation. AIRCP is designed to compose with the protocols that already exist for the rest of the agentic commerce stack — Universal Commerce Protocol (UCP) for checkout and order management, Agent Payments Protocol (AP2) for payment authorization, Agent2Agent (A2A) for agent-to-agent communication, and Model Context Protocol (MCP) for tool exposure.
 
-This document specifies AIRCP version 0.1. The protocol defines two tiers of product attributes (Core and Enhanced), a discovery mechanism using a well-known URL, transaction hooks for agent-initiated purchases, and a trust layer for merchant verification. AIRCP is designed to be implementable by any catalog system without modification of underlying commerce infrastructure.
+This document specifies AIRCP version 0.1. The protocol defines two tiers of product attributes (Core and Enhanced) and a discovery mechanism using a well-known URL. AIRCP is designed to be implementable by any catalog system without modification of underlying commerce infrastructure, and to interoperate cleanly with UCP-compatible checkout flows and AP2-compatible payment flows.
 
-AIRCP exists because the next decade of commerce will be conducted by AI agents acting on behalf of consumers, and the protocols that govern how those agents discover and transact against catalogs have not yet been standardized. AIRCP proposes a path.
+AIRCP exists because the protocols for transaction (UCP, AP2), agent communication (A2A), and tool use (MCP) are well-defined and rapidly adopting — but the catalog semantic layer they all assume is largely missing. Today's product catalogs expose enough structured data for browsers and search engines, not for AI agents that need to reason about fit, taste, persona compatibility, and occasion suitability. AIRCP fills that gap.
 
 ---
 
@@ -80,6 +80,39 @@ AIRCP does not require centralized registration. Any catalog publisher can expos
 AIRCP v0.1 is a draft published for public review and community feedback. The specification is expected to evolve based on input from implementers, agent developers, and merchants over a period of approximately 90 days following initial publication, after which a v1.0 specification will be released.
 
 > ⚠️ Implementers should not consider v0.1 stable for production use without acknowledgment that the specification may change. Breaking changes between v0.1 and v1.0 are possible and will be documented in the changelog.
+
+### 1.5 Relationship to other protocols
+
+AIRCP is one layer of a multi-protocol stack that defines agentic commerce. It composes with — and explicitly does not duplicate — the following standards.
+
+#### The agentic commerce stack
+
+| Layer | Protocol | What it defines | Status |
+|---|---|---|---|
+| Tool exposure | **MCP** (Anthropic, 2024) | How AI tools expose themselves to agents | Widely adopted |
+| Agent communication | **A2A** (Google, 2025) | How agents talk to other agents | Adopting |
+| Payment authorization | **AP2** (Google + 60 partners, Sept 2025) | Verifiable user consent for agent-initiated payments via Intent Mandates, Cart Mandates, and Payment Mandates | Adopting (Apache 2.0) |
+| Commerce transaction | **UCP** (Google + Shopify/Etsy/Wayfair/Target/Walmart, Jan 2026) | Unified checkout sessions, identity linking, order management, real-time pricing/inventory | Adopting (Apache 2.0) |
+| **Catalog semantics** | **AIRCP** (this specification) | **Product representation with the semantic depth AI agents need to reason about fit, taste, persona, and occasion** | **Public draft (MIT)** |
+
+#### Why the stack has a gap
+
+UCP, AP2, A2A, and MCP each solve real problems and together cover most of the agentic commerce surface. But all four assume the catalog they are reasoning about is already AI-readable in the semantic sense — that fit profiles, persona compatibility, occasion suitability, and other interpretive attributes are present and machine-parseable. In practice, this is rarely true. The catalog data that retailers expose today was designed for browsers and search engines. It is sparse, inconsistent across merchants, and missing the semantic dimensions an AI agent needs to make a taste-aware recommendation.
+
+A concrete example: an agent helping a user find "a workplace-appropriate merino sweater that pairs with chinos and runs true to size" can complete the transaction via UCP and authorize payment via AP2 — but only if some catalog has already exposed the workplace_appropriate, pairs_well_with, and runs attributes in a structured form. Today most catalogs do not. AIRCP defines the standard for those attributes.
+
+#### How AIRCP composes with each layer
+
+- **AIRCP and UCP:** An AIRCP-compliant catalog publishes the semantic product layer. A UCP-compliant catalog publishes the transaction layer. The same merchant can — and is encouraged to — implement both. An agent that discovers a product via AIRCP and wants to complete the purchase should defer to UCP's checkout session format. AIRCP does not define a competing checkout flow; see Section 7.
+- **AIRCP and AP2:** Payment authorization for AIRCP-discovered products should use AP2's Intent Mandate and Cart Mandate flow. AIRCP does not define a competing payment authorization mechanism.
+- **AIRCP and A2A:** Agents implementing AIRCP discovery and reasoning can communicate with other agents via A2A. AIRCP does not define agent-to-agent communication.
+- **AIRCP and MCP:** A catalog can expose its AIRCP endpoint as an MCP tool, allowing MCP-aware agents to consume AIRCP-formatted product data through the MCP interface. AIRCP and MCP are complementary.
+
+#### Why AIRCP is published separately rather than as a UCP extension
+
+UCP's three core capabilities at launch (Checkout, Identity Linking, Order Management) are oriented toward the transaction surface. The semantic catalog layer is a distinct concern with distinct authors — typically not the engineers who own checkout but the teams who own product information management, merchandising, and AI-driven recommendation. Conflating these layers in one specification would slow adoption of both. Publishing AIRCP as a thin separate standard that explicitly composes with UCP allows each protocol to evolve at the speed of its domain.
+
+We expect — and welcome — future versions of UCP to formally reference AIRCP-compliant catalog endpoints as an input source, and future versions of AIRCP to formally reference UCP-compliant transaction endpoints as the recommended checkout layer. Section 7 of this specification reflects that intent.
 
 ---
 
@@ -165,6 +198,7 @@ Where `{host}` is the fully qualified domain of the catalog publisher. The respo
   "catalog_endpoint": "https://example.com/api/aircp/catalog",
   "product_endpoint_pattern": "https://example.com/api/aircp/product/{id}",
   "search_endpoint": "https://example.com/api/aircp/search",
+  "ucp_endpoint": "https://example.com/.well-known/ucp.json",
   "transaction_endpoint": "https://example.com/api/aircp/transaction",
   "verified": false,
   "last_updated": "2026-05-12T10:00:00Z",
@@ -172,7 +206,7 @@ Where `{host}` is the fully qualified domain of the catalog publisher. The respo
   "capabilities": [
     "core_attributes",
     "enhanced_attributes",
-    "transaction_hooks",
+    "ucp_compatible",
     "search"
   ]
 }
@@ -698,7 +732,11 @@ Implementations that produce Tier 2 attributes MUST declare `"enhanced_attribute
 
 ## 7. Transaction Hooks
 
-AIRCP defines optional transaction hooks for agent-initiated purchases. Catalogs that support transactions MUST declare `"transaction_hooks"` in their discovery document capabilities and expose a `transaction_endpoint`.
+> **Important — read first.** AIRCP does not define a competing checkout protocol. As of v0.1, the recommended path for transaction completion against AIRCP-discovered products is **Universal Commerce Protocol (UCP)** for checkout, identity linking, and order management, and **Agent Payments Protocol (AP2)** for payment authorization. Both are open Apache 2.0 specifications co-developed by Google and the major commerce and payments industry. See Section 1.5 for the relationship between AIRCP and these protocols.
+
+The transaction hooks defined in this section are an **optional fallback** for catalogs that have not yet implemented UCP. They define a minimal transaction interface so that AIRCP-only catalogs can still be transacted against by AIRCP-aware agents. We expect this section to be deprecated in AIRCP v1.0, with formal redirection to UCP for all transaction flows.
+
+Catalogs that support AIRCP transaction hooks MUST declare `"transaction_hooks"` in their discovery document capabilities and expose a `transaction_endpoint`. Catalogs that implement UCP SHOULD declare `"ucp_compatible"` in their capabilities instead, and link to their UCP discovery endpoint in the `ucp_endpoint` field of the AIRCP discovery document.
 
 ### 7.1 Transaction flow
 
@@ -1025,14 +1063,17 @@ This section provides complete reference examples of AIRCP-compatible catalog re
 
 ### 13.1 Acknowledgments
 
-AIRCP draws inspiration from several preceding open standards:
+AIRCP exists as a semantic layer within a multi-protocol stack. We acknowledge and build on the following open standards:
 
-- **MCP (Model Context Protocol):** Anthropic's protocol for AI tool use, which demonstrated that thin, agent-first protocols can compound community adoption rapidly.
+- **MCP (Model Context Protocol):** Anthropic's protocol for AI tool exposure, which demonstrated that thin, agent-first protocols can compound community adoption rapidly. MIT licensed.
+- **A2A (Agent2Agent Protocol):** Google's protocol for agent-to-agent communication.
+- **AP2 (Agent Payments Protocol):** The open protocol for agent-initiated payment authorization via Intent Mandates, Cart Mandates, and Payment Mandates. Co-developed by Google with 60+ partners including Mastercard, PayPal, Coinbase, and Adyen. Apache 2.0 licensed.
+- **UCP (Universal Commerce Protocol):** The open protocol for unified commerce transactions — checkout sessions, identity linking, order management — co-developed by Google with Shopify, Etsy, Wayfair, Target, Walmart, and endorsed by Stripe, Salesforce, Visa, and others. Apache 2.0 licensed. AIRCP-compliant catalogs SHOULD be UCP-compliant for transactions.
 - **schema.org:** The web's structured-data vocabulary, which informed our approach to attribute naming and type specifications.
-- **OpenAPI:** The widely-adopted API specification format, which guided our approach to transaction hooks.
+- **OpenAPI:** The widely-adopted API specification format, which guided our approach to the optional transaction hooks fallback.
 - **Web Application Manifest and /.well-known:** RFC 8615, which provides the discovery pattern AIRCP uses.
 
-AIRCP would not exist without the trail blazed by these efforts. Where AIRCP diverges from any of these conventions, the divergence is intentional and documented.
+AIRCP would not exist without the trail blazed by these efforts. Where AIRCP diverges from any of these conventions, the divergence is intentional and documented. Where AIRCP composes with these standards, the composition is documented in Section 1.5.
 
 ### 13.2 License
 
@@ -1044,9 +1085,9 @@ Implementations of AIRCP are subject to their own licenses. AIRCP places no lice
 
 For questions, proposals, or contributions to AIRCP:
 
-- **GitHub Issues:** https://github.com/aircp-org/aircp-spec/issues
-- **GitHub Repo:** https://github.com/aircp-org/aircp-spec
+- **GitHub:** https://github.com/aircp-org/aircp-spec
 - **Website:** https://aircp.org
+- **Specification authors:** spec@aircp.org
 
 ---
 
