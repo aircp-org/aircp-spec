@@ -7,6 +7,7 @@
 | **Version** | 0.1 |
 | **Status** | Public Draft |
 | **Published** | May 12, 2026 |
+| **Last revised** | May 12, 2026 |
 | **License** | [MIT](./LICENSE) |
 | **Authors** | The Shoop team |
 | **Maintained at** | https://github.com/aircp-org/aircp-spec |
@@ -18,11 +19,18 @@
 
 ## Abstract
 
-AIRCP — AI-Readable Catalog Protocol — is an open specification that defines the **catalog semantic layer** of agentic commerce: how online product catalogs should be structured so AI agents can discover, parse, and reason about products with the depth required for taste-driven recommendation. AIRCP is designed to compose with the protocols that already exist for the rest of the agentic commerce stack — Universal Commerce Protocol (UCP) for checkout and order management, Agent Payments Protocol (AP2) for payment authorization, Agent2Agent (A2A) for agent-to-agent communication, and Model Context Protocol (MCP) for tool exposure.
+AIRCP — AI-Readable Catalog Protocol — is an open specification that defines the **Enhanced Catalog Layer** of agentic commerce: how online product catalogs should be structured so AI agents can discover, parse, and reason about products with the depth required for relevancy-aware recommendation.
 
-This document specifies AIRCP version 0.1. The protocol defines two tiers of product attributes (Core and Enhanced) and a discovery mechanism using a well-known URL. AIRCP is designed to be implementable by any catalog system without modification of underlying commerce infrastructure, and to interoperate cleanly with UCP-compatible checkout flows and AP2-compatible payment flows.
+AIRCP defines two tiers of attributes:
 
-AIRCP exists because the protocols for transaction (UCP, AP2), agent communication (A2A), and tool use (MCP) are well-defined and rapidly adopting — but the catalog semantic layer they all assume is largely missing. Today's product catalogs expose enough structured data for browsers and search engines, not for AI agents that need to reason about fit, taste, persona compatibility, and occasion suitability. AIRCP fills that gap.
+- **Tier 1 — Enhanced Product Attributes** (buyer-agnostic): UCP-compatible base data plus enriched descriptive and relational attributes — material, color, weight, style classification, the image a product projects, the contexts it works in, product-to-product compatibility. Everything an agent needs to know about a product, regardless of who is buying.
+- **Tier 2 — Relevancy Attributes** (buyer-relevant): Interpretive attributes designed to be matched against a buyer's profile — fit profile, persona compatibility, occasion suitability. Published in the catalog, but interpretively useful only when matched against a buyer model that the publishing protocol does not define.
+
+Both tiers are open and published in AIRCP-format catalogs. The catalog publishes product knowledge. Buyer knowledge — and the reasoning that matches Tier 2 attributes against a specific buyer — sits in the **Relevancy Reasoning Layer**, which is intentionally outside the protocol. The Relevancy Reasoning Layer is where AI agents differentiate from each other. AIRCP standardizes the data inputs to that layer without prescribing how the layer operates.
+
+AIRCP is designed to compose with the rest of the agentic commerce stack: Universal Commerce Protocol (UCP) for checkout and order management, Agent Payments Protocol (AP2) for payment authorization, Agent2Agent (A2A) for agent-to-agent communication, and Model Context Protocol (MCP) for tool exposure. AIRCP is implementable by any catalog system without modification of underlying commerce infrastructure.
+
+AIRCP exists because the protocols for transaction (UCP, AP2), agent communication (A2A), and tool use (MCP) are well-defined and rapidly adopting — but the Enhanced Catalog Layer they all assume is largely missing. Today's product catalogs expose enough structured data for browsers and search engines, not for AI agents that need to reason about style, image projection, occasion fit, and product-to-product compatibility, let alone buyer-specific relevancy. AIRCP fills that gap.
 
 ---
 
@@ -32,8 +40,8 @@ AIRCP exists because the protocols for transaction (UCP, AP2), agent communicati
 2. [Design Principles](#2-design-principles)
 3. [Conformance](#3-conformance)
 4. [Catalog Discovery](#4-catalog-discovery)
-5. [Tier 1: Core Attributes](#5-tier-1-core-attributes)
-6. [Tier 2: Enhanced Attributes](#6-tier-2-enhanced-attributes)
+5. [Tier 1: Enhanced Product Attributes](#5-tier-1-enhanced-product-attributes)
+6. [Tier 2: Relevancy Attributes](#6-tier-2-relevancy-attributes)
 7. [Transaction Hooks](#7-transaction-hooks)
 8. [Trust and Verification](#8-trust-and-verification)
 9. [Versioning](#9-versioning)
@@ -93,24 +101,36 @@ AIRCP is one layer of a multi-protocol stack that defines agentic commerce. It c
 | Agent communication | **A2A** (Google, 2025) | How agents talk to other agents | Adopting |
 | Payment authorization | **AP2** (Google + 60 partners, Sept 2025) | Verifiable user consent for agent-initiated payments via Intent Mandates, Cart Mandates, and Payment Mandates | Adopting (Apache 2.0) |
 | Commerce transaction | **UCP** (Google + Shopify/Etsy/Wayfair/Target/Walmart, Jan 2026) | Unified checkout sessions, identity linking, order management, real-time pricing/inventory | Adopting (Apache 2.0) |
-| **Catalog semantics** | **AIRCP** (this specification) | **Product representation with the semantic depth AI agents need to reason about fit, taste, persona, and occasion** | **Public draft (MIT)** |
+| **Enhanced Catalog** | **AIRCP** (this specification) | **Tier 1 enriched product attributes (style, image, context, product-to-product compatibility) and Tier 2 relevancy attributes (designed to match against a buyer model)** | **Public draft (MIT)** |
+| Relevancy Reasoning | *intentionally out of protocol scope* | *How an agent matches Tier 2 attributes against a specific buyer's profile* | *Agent-side, proprietary* |
+
+#### The two-layer model: open catalog, closed reasoning
+
+AIRCP defines the **Enhanced Catalog Layer** — what merchants publish. It does *not* define the **Relevancy Reasoning Layer** — how agents match published Tier 2 attributes against a specific buyer to produce a personalized recommendation. This separation is deliberate.
+
+- The Enhanced Catalog Layer is a coordination problem: every merchant should expose product data the same way, so every agent can read it. Solving coordination problems requires open standards. AIRCP is MIT licensed for this reason.
+- The Relevancy Reasoning Layer is a differentiation problem: agents compete on how well they understand their users and how well they match products to users. Solving differentiation problems requires proprietary innovation. AIRCP intentionally does not standardize this layer.
+
+Tier 2 attributes are published openly in the catalog, but they are interpretively useful only when matched against a buyer model — and the buyer model is the agent's proprietary asset, not part of the protocol. An agent without a sophisticated buyer model can still consume Tier 2 attributes, but it must rely on user-stated criteria within a single conversation rather than a persistent buyer profile. Agents with sophisticated buyer models (such as continuously-learning taste models built from quiz responses, revealed preferences, and purchase behavior) gain disproportionately more value from Tier 2 attributes than stateless agents do.
+
+This separation means AIRCP can be fully open without commoditizing agents that build proprietary buyer reasoning on top of it.
 
 #### Why the stack has a gap
 
-UCP, AP2, A2A, and MCP each solve real problems and together cover most of the agentic commerce surface. But all four assume the catalog they are reasoning about is already AI-readable in the semantic sense — that fit profiles, persona compatibility, occasion suitability, and other interpretive attributes are present and machine-parseable. In practice, this is rarely true. The catalog data that retailers expose today was designed for browsers and search engines. It is sparse, inconsistent across merchants, and missing the semantic dimensions an AI agent needs to make a taste-aware recommendation.
+UCP, AP2, A2A, and MCP each solve real problems and together cover most of the agentic commerce surface. But all four assume the catalog they are reasoning about is already AI-readable in the enhanced sense — that style classification, image projection, product-to-product compatibility, and other interpretive product attributes are present and machine-parseable. In practice, this is rarely true. The catalog data retailers expose today was designed for browsers and search engines. UCP's catalog spec defines title, description, price, variants, options, media, and rating — descriptive transaction-oriented data. It does not define style classification, product-to-product compatibility, image projection, or any of the interpretive attributes that turn a product listing into something an AI agent can reason about.
 
-A concrete example: an agent helping a user find "a workplace-appropriate merino sweater that pairs with chinos and runs true to size" can complete the transaction via UCP and authorize payment via AP2 — but only if some catalog has already exposed the workplace_appropriate, pairs_well_with, and runs attributes in a structured form. Today most catalogs do not. AIRCP defines the standard for those attributes.
+A concrete example: an agent helping a user find "a minimalist black wool coat that works for both business and casual settings and pairs with my existing wardrobe" can complete the transaction via UCP and authorize payment via AP2 — but only if some catalog has already exposed the style_classification, image_projection, occasion_versatility, and pairs_with attributes in a structured form. UCP does not define these. AIRCP Tier 1 does. Now extend the query: "...for my body type, in my style preference, that I won't return." That extension requires matching against the user's Shooping Cart profile — which is what Tier 2 attributes enable, when an agent has the proprietary buyer model to do the matching.
 
 #### How AIRCP composes with each layer
 
-- **AIRCP and UCP:** An AIRCP-compliant catalog publishes the semantic product layer. A UCP-compliant catalog publishes the transaction layer. The same merchant can — and is encouraged to — implement both. An agent that discovers a product via AIRCP and wants to complete the purchase should defer to UCP's checkout session format. AIRCP does not define a competing checkout flow; see Section 7.
+- **AIRCP and UCP:** An AIRCP-compliant catalog publishes the Enhanced Catalog Layer. A UCP-compliant catalog publishes the transaction layer. The same merchant can — and is encouraged to — implement both. An agent that discovers a product via AIRCP and wants to complete the purchase should defer to UCP's checkout session format. AIRCP does not define a competing checkout flow; see Section 7.
 - **AIRCP and AP2:** Payment authorization for AIRCP-discovered products should use AP2's Intent Mandate and Cart Mandate flow. AIRCP does not define a competing payment authorization mechanism.
 - **AIRCP and A2A:** Agents implementing AIRCP discovery and reasoning can communicate with other agents via A2A. AIRCP does not define agent-to-agent communication.
 - **AIRCP and MCP:** A catalog can expose its AIRCP endpoint as an MCP tool, allowing MCP-aware agents to consume AIRCP-formatted product data through the MCP interface. AIRCP and MCP are complementary.
 
 #### Why AIRCP is published separately rather than as a UCP extension
 
-UCP's three core capabilities at launch (Checkout, Identity Linking, Order Management) are oriented toward the transaction surface. The semantic catalog layer is a distinct concern with distinct authors — typically not the engineers who own checkout but the teams who own product information management, merchandising, and AI-driven recommendation. Conflating these layers in one specification would slow adoption of both. Publishing AIRCP as a thin separate standard that explicitly composes with UCP allows each protocol to evolve at the speed of its domain.
+UCP's three core capabilities at launch (Checkout, Identity Linking, Order Management) are oriented toward the transaction surface. The Enhanced Catalog Layer is a distinct concern with distinct authors — typically not the engineers who own checkout but the teams who own product information management, merchandising, and AI-driven recommendation. Conflating these layers in one specification would slow adoption of both. Publishing AIRCP as a thin separate standard that explicitly composes with UCP allows each protocol to evolve at the speed of its domain.
 
 We expect — and welcome — future versions of UCP to formally reference AIRCP-compliant catalog endpoints as an input source, and future versions of AIRCP to formally reference UCP-compliant transaction endpoints as the recommended checkout layer. Section 7 of this specification reflects that intent.
 
@@ -130,7 +150,7 @@ AIRCP optimizes for AI agent consumption, not human readability. Attribute names
 
 ### Principle 3: Two tiers, one protocol
 
-AIRCP defines two tiers of attributes. Tier 1 (Core) is mandatory and deterministic: every conforming catalog must expose Core attributes, and Core attributes have unambiguous types and meanings. Tier 2 (Enhanced) is optional and semantic: it includes attributes like persona compatibility, taste suitability, and pairing recommendations that require sophisticated production methodology.
+AIRCP defines two tiers of attributes. Tier 1 (Enhanced Product) is buyer-agnostic: it describes the product itself, including its intrinsic properties (material, color, weight) and relational properties (style classification, image projection, products it pairs with). Tier 1 has unambiguous types and meanings. Tier 2 (Relevancy) is buyer-relevant: it includes attributes like persona compatibility, fit profile, and occasion suitability that are designed to be matched against a buyer's profile. Tier 2 attributes are published openly in the catalog, but the reasoning that matches them against a specific buyer is intentionally out of protocol scope — that is the Relevancy Reasoning Layer, owned by each agent implementation.
 
 The protocol defines Tier 2 as a set of interface contracts. Implementations are responsible for producing Tier 2 values. AIRCP does not prescribe how Tier 2 values are produced; competition on production methodology is expected and encouraged.
 
@@ -204,8 +224,8 @@ Where `{host}` is the fully qualified domain of the catalog publisher. The respo
   "last_updated": "2026-05-12T10:00:00Z",
   "contact": "aircp@example.com",
   "capabilities": [
-    "core_attributes",
-    "enhanced_attributes",
+    "product_attributes",
+    "relevancy_attributes",
     "ucp_compatible",
     "search"
   ]
@@ -307,19 +327,21 @@ Where `{host}` is the fully qualified domain of the catalog publisher. The respo
 #### `capabilities` — **REQUIRED**
 
 - **Type:** `array of strings`
-- **Description:** List of AIRCP capabilities this catalog supports. Valid values: `"core_attributes"`, `"enhanced_attributes"`, `"transaction_hooks"`, `"search"`. Future versions may define additional capabilities.
+- **Description:** List of AIRCP capabilities this catalog supports. Valid values: `"product_attributes"`, `"relevancy_attributes"`, `"transaction_hooks"`, `"search"`. Future versions may define additional capabilities.
 
 ```json
-"capabilities": ["core_attributes", "enhanced_attributes", "search"]
+"capabilities": ["product_attributes", "relevancy_attributes", "search"]
 ```
 
 ---
 
-## 5. Tier 1: Core Attributes
+## 5. Tier 1: Enhanced Product Attributes
 
-Tier 1 (Core) attributes are mandatory for every product in a conforming catalog. They are deterministic: there is no ambiguity in their values, and any two implementations should produce identical Core attributes for the same product.
+Tier 1 attributes describe a product comprehensively — both its intrinsic properties (material, color, weight) and its relational properties (style classification, image projection, contexts where it works, products it pairs with). Tier 1 is **buyer-agnostic**: every Tier 1 attribute is true about the product itself, independent of who is buying it.
 
-This section defines all Core attributes. Implementations MUST produce all required Core attributes for every product. Implementations SHOULD produce all optional Core attributes when the information is available.
+Tier 1 extends what UCP's catalog spec defines (title, description, price, variants, options, media, rating) with the enriched descriptive and relational attributes an AI agent needs to reason about a product before matching it to a specific buyer.
+
+This section defines all Tier 1 attributes. Implementations MUST produce all required Tier 1 attributes for every product. Implementations SHOULD produce all optional Tier 1 attributes when the information is available. Implementations that wish to be UCP-compatible SHOULD also implement UCP's catalog schema; AIRCP Tier 1 is designed to nest cleanly inside a UCP-compliant catalog response via the `metadata` field, or to be published in parallel at a separate AIRCP endpoint.
 
 ### 5.1 Identity attributes
 
@@ -534,15 +556,101 @@ This section defines all Core attributes. Implementations MUST produce all requi
 }
 ```
 
+### 5.7 Style and context attributes
+
+These attributes describe a product in terms of its style, the image it projects, the contexts where it works, and how it relates to other products. They are buyer-agnostic: every value is true about the product itself, not about who is buying it. They are what distinguishes Tier 1 from UCP's transaction-oriented catalog spec, and they are what makes Tier 1 useful to AI agents reasoning about products *before* knowing who the buyer is.
+
+#### `style_classification` — *OPTIONAL*
+
+- **Type:** `array of strings`
+- **Description:** Stylistic categories the product belongs to. Implementations SHOULD draw from a published vocabulary; the protocol does not prescribe one. Common categories include: `minimalist`, `maximalist`, `classic`, `contemporary`, `avant-garde`, `streetwear`, `preppy`, `bohemian`, `industrial`, `mid_century_modern`, `scandinavian`. For non-apparel categories (home, beauty, outdoor), implementations use category-appropriate style vocabularies.
+
+```json
+"style_classification": ["minimalist", "contemporary"]
+```
+
+#### `image_projection` — *OPTIONAL*
+
+- **Type:** `array of strings`
+- **Description:** What the product signals or projects when used or worn. Examples: `quiet_confidence`, `craft_aware`, `understated_luxury`, `playful`, `serious`, `aspirational`, `accessible`, `expert`, `beginner`. These are buyer-agnostic — they describe what the product says, not how a specific buyer experiences it.
+
+```json
+"image_projection": ["quiet_confidence", "craft_aware", "understated"]
+```
+
+#### `context_suitability` — *OPTIONAL*
+
+- **Type:** `array of strings`
+- **Description:** Contexts in which the product is appropriate. Examples for apparel: `workplace_business_casual`, `client_facing`, `formal_event`, `weekend_casual`, `athletic`, `travel`. Examples for home: `formal_living_room`, `casual_family_room`, `home_office`, `outdoor_patio`. Examples for beauty: `everyday_wear`, `professional_setting`, `evening_out`, `special_occasion`.
+
+```json
+"context_suitability": ["workplace_business_casual", "client_facing", "travel"]
+```
+
+#### `pairs_with` — *OPTIONAL*
+
+- **Type:** `array of objects`
+- **Description:** Other product categories or specific products this product pairs with. Each entry contains: `category` (string, e.g., "chinos", "wool_trousers"), `strength` (number 0.0–1.0, indicates how strong the pairing is), `notes` (optional string explaining the pairing). For apparel, describes outfit compatibility. For home goods, describes design coordination. For beauty, describes complementary products.
+
+```json
+"pairs_with": [
+  { "category": "chinos", "strength": 0.92, "notes": "Color and silhouette align well" },
+  { "category": "wool_trousers", "strength": 0.88 },
+  { "category": "denim", "strength": 0.35, "notes": "Weaker pairing; tonal mismatch" }
+]
+```
+
+#### `substitute_for` — *OPTIONAL*
+
+- **Type:** `array of objects`
+- **Description:** Products this product can serve as a substitute for, with substitution strength. Used by agents when a primary recommendation is out of stock or out of budget. Each entry: `category_or_product_id` (string), `strength` (number 0.0–1.0), `notes` (optional string).
+
+```json
+"substitute_for": [
+  { "category_or_product_id": "merino_polo", "strength": 0.78 },
+  { "category_or_product_id": "cashmere_crewneck", "strength": 0.65, "notes": "Lower price point, similar silhouette" }
+]
+```
+
+#### `weather_suitability` — *OPTIONAL*
+
+- **Type:** `object`
+- **Description:** Weather and seasonal suitability. Object contains: `temp_range_celsius` (array of two integers, min/max), `seasons` (array of strings: `spring`, `summer`, `fall`, `winter`), `conditions` (array of strings: `dry`, `humid`, `rainy`, `cold_dry`, `cold_wet`).
+
+```json
+"weather_suitability": {
+  "temp_range_celsius": [10, 22],
+  "seasons": ["spring", "fall"],
+  "conditions": ["dry", "mild_outdoor"]
+}
+```
+
+#### `aesthetic_compatibility` — *OPTIONAL*
+
+- **Type:** `object`
+- **Description:** Describes which design or aesthetic systems the product belongs to. For home goods, this is especially important. Object contains: `design_era` (e.g., "mid_century_modern", "art_deco", "minimalist"), `color_family` (e.g., "warm_neutral", "cool_neutral", "earth_tones", "jewel_tones"), `material_palette` (array of strings describing material/finish characteristics).
+
+```json
+"aesthetic_compatibility": {
+  "design_era": "mid_century_modern",
+  "color_family": "warm_neutral",
+  "material_palette": ["walnut", "brass", "linen", "matte_finish"]
+}
+```
+
 ---
 
-## 6. Tier 2: Enhanced Attributes
+## 6. Tier 2: Relevancy Attributes
 
-Tier 2 (Enhanced) attributes are optional and semantic. They describe taste, fit, suitability, and other dimensions that require interpretive judgment beyond what is encoded in deterministic product data.
+Tier 2 attributes are **buyer-relevant**: they describe a product in terms designed to be matched against a specific buyer's profile, preferences, body, context, and history. Where Tier 1 says "this is a slim-fit merino sweater in oatmeal," Tier 2 says "this sweater fits petite-to-average builds well, suits a minimalist-professional persona, works for client-facing settings."
+
+Tier 2 attributes are published openly in the catalog like Tier 1. **They are interpretively useful only when matched against a buyer model.** An agent without a sophisticated buyer model can still consume Tier 2 attributes — using them as filters against user-stated criteria within a single conversation — but agents with persistent, continuously-learning buyer models gain disproportionately more value.
+
+This separation is deliberate. AIRCP defines what Tier 2 attributes are (Enhanced Catalog Layer). AIRCP does *not* define how an agent matches them against a specific buyer (Relevancy Reasoning Layer). The Relevancy Reasoning Layer is where AI agents differentiate from each other; standardizing it would erase that differentiation and slow innovation in the agent space.
 
 > AIRCP defines Tier 2 attributes as **interface contracts** — specifying what each attribute is and how it should be structured — without prescribing how implementations should produce them. Different implementations are expected to produce Tier 2 values using different methodologies (knowledge libraries, AI inference, expert review, etc.), and competition on production quality is expected and encouraged.
 
-Implementations that produce Tier 2 attributes MUST declare `"enhanced_attributes"` in the discovery document's capabilities array. Implementations MAY produce a subset of Tier 2 attributes (e.g., only `fit_profile` and `persona_compatibility`, omitting others).
+Implementations that produce Tier 2 attributes MUST declare `"relevancy_attributes"` in the discovery document's capabilities array. Implementations MAY produce a subset of Tier 2 attributes (e.g., only `fit_profile` and `persona_compatibility`, omitting others).
 
 ### 6.1 Persona compatibility
 
@@ -1049,8 +1157,8 @@ This section provides complete reference examples of AIRCP-compatible catalog re
   "last_updated": "2026-05-12T10:00:00Z",
   "contact": "aircp@northbound.example",
   "capabilities": [
-    "core_attributes",
-    "enhanced_attributes",
+    "product_attributes",
+    "relevancy_attributes",
     "transaction_hooks",
     "search"
   ]
