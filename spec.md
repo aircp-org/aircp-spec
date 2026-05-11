@@ -1044,9 +1044,9 @@ Implementations of AIRCP are subject to their own licenses. AIRCP places no lice
 
 For questions, proposals, or contributions to AIRCP:
 
-- **GitHub:** https://github.com/aircp-org/aircp-spec
+- **GitHub Issues:** https://github.com/aircp-org/aircp-spec/issues
+- **GitHub Repo:** https://github.com/aircp-org/aircp-spec
 - **Website:** https://aircp.org
-- **Specification authors:** spec@aircp.org
 
 ---
 
