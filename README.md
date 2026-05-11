@@ -138,5 +138,5 @@ AIRCP is published under the [MIT License](./LICENSE). Implementations of AIRCP 
 ## Contact
 
 - **GitHub Issues:** https://github.com/aircp-org/aircp-spec/issues
-- **Website:** [aircp.org](https://aircp.org)
-- **Specification authors:** spec@aircp.org
+- **GitHub Repo:** https://github.com/aircp-org/aircp-spec
+- **Website:** https://aircp.org
