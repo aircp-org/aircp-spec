@@ -14,7 +14,7 @@ AIRCP v0.1 is a draft published for review. The most valuable contributions duri
 
 2. **Schema clarifications.** If an attribute definition is unclear, contradictory, or missing an important type constraint, propose a clarification.
 
-3. **Missing attributes.** If you believe a Core or Enhanced attribute is missing that meaningfully limits the protocol, propose it.
+3. **Missing attributes.** If you believe a Tier 1 (Enhanced Product) or Tier 2 (Relevancy) attribute is missing that meaningfully limits the protocol, propose it.
 
 4. **Reference implementations.** If you have built or are building an AIRCP-compatible catalog or agent, we want to know about it. Send a pull request to add yourself to the implementations registry (when published) or open an issue describing your implementation.
 
@@ -26,7 +26,8 @@ AIRCP v0.1 is a draft published for review. The most valuable contributions duri
 
 To keep the protocol focused, some kinds of changes are out of scope for v0.1:
 
-- **Architectural rewrites** that abandon the two-tier (Core / Enhanced) model. These may be appropriate for a future major version but will not be considered in v0.1 → v1.0.
+- **Architectural rewrites** that abandon the two-tier model (Tier 1 Enhanced Product Attributes / Tier 2 Relevancy Attributes) or the separation between the Enhanced Catalog Layer and the Relevancy Reasoning Layer. These may be appropriate for a future major version but will not be considered in v0.1 → v1.0.
+- **Proposals to standardize the Relevancy Reasoning Layer.** AIRCP intentionally does not define how agents match Tier 2 attributes against a specific buyer. That layer is where AI agents compete; standardizing it would erase that differentiation and slow innovation in the agent space.
 - **Centralized infrastructure proposals.** AIRCP is deliberately decentralized. Proposals that require a central authority (registry, validator, etc.) will be deferred unless they are clearly optional infrastructure.
 - **Closed-source dependencies.** AIRCP must remain implementable without any proprietary software or service.
 - **Pricing or monetization.** AIRCP is free to implement and will remain so. The protocol does not concern itself with how implementations are funded.
@@ -67,7 +68,7 @@ PR review timelines: we aim to respond within 5 business days during the draft p
 
 ### Discussing big ideas
 
-For larger discussions that are not yet ready to be issues or PRs, open a [discussion](https://github.com/aircp-org/aircp-spec/discussions). 
+For larger discussions that are not yet ready to be issues or PRs, open a [discussion](https://github.com/aircp-org/aircp-spec/discussions).
 
 ---
 
@@ -75,7 +76,7 @@ For larger discussions that are not yet ready to be issues or PRs, open a [discu
 
 Be civil. Be specific. Critique the spec, not the people.
 
-We expect contributors to follow the standards of the [Contributor Covenant](https://www.contributor-covenant.org/). Concerns can be reported to **GitHub Issues:** https://github.com/aircp-org/aircp-spec/issues
+We expect contributors to follow the standards of the [Contributor Covenant](https://www.contributor-covenant.org/). Concerns can be reported via [GitHub Issues](https://github.com/aircp-org/aircp-spec/issues).
 
 ---
 
