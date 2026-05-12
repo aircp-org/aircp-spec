@@ -1,8 +1,8 @@
 # AIRCP — AI-Readable Catalog Protocol
 
-**An open specification for AI agents to discover, parse, and transact against online product catalogs.**
+**An open specification for the Enhanced Catalog Layer of agentic commerce.**
 
-AIRCP is to commerce what [MCP](https://modelcontextprotocol.io) is to AI tool use: a thin, semantic, agent-friendly layer over the existing commerce internet.
+AIRCP defines how online product catalogs should be structured so AI agents can discover, parse, and reason about products with the depth required for relevancy-aware recommendation.
 
 This repository contains the AIRCP specification and reference materials.
 
@@ -13,25 +13,44 @@ This repository contains the AIRCP specification and reference materials.
 
 ---
 
-## Why AIRCP exists
+## What AIRCP is
 
-The commerce internet was designed for human readers. Product catalogs are rendered as HTML pages optimized for visual consumption, with semantic structure encoded primarily in markup conventions retrofitted onto an architecture built for browsers, not agents.
+The plumbing of agentic commerce has been assembled over the last 18 months:
 
-AI agents acting on behalf of consumers face three structural problems when transacting against this catalog surface:
+- **MCP** (Anthropic, 2024) — how AI tools expose themselves to agents
+- **A2A** (Google, 2025) — how agents talk to other agents
+- **AP2** (Google + 60 partners, Sept 2025) — how agent-initiated payments are authorized
+- **UCP** (Google + Shopify + Stripe + Visa, Jan 2026) — how unified commerce transactions complete
 
-- **Discovery.** No standard way to find which catalogs exist or how to query them.
-- **Interpretation.** Product data is inconsistent across merchants. Attribute names differ, types are unspecified, important context is buried in unstructured description text.
-- **Transaction.** Even when an agent identifies the right product, completing the purchase requires merchant-specific integration.
+Four protocols for the transactional plumbing. None of them define the catalog data layer — how products should be structured for AI agents to reason about style, fit, image projection, occasion suitability, and the rest of what actually drives a recommendation.
 
-AIRCP addresses these three problems with a thin, semantic protocol that any catalog can implement without changing its underlying commerce infrastructure.
+UCP's catalog spec defines title, description, price, variants, rating. That's the same data your search-engine sitemap already exposes. **AIRCP defines what comes next.**
+
+---
+
+## The two-layer model: open catalog, closed reasoning
+
+AIRCP defines two tiers of attributes, both open:
+
+### Tier 1 — Enhanced Product Attributes (buyer-agnostic)
+
+UCP-compatible base data plus enriched descriptive and relational attributes — style classification, image projection, context suitability, product-to-product compatibility. Everything an agent needs to know about a product, regardless of who is buying.
+
+### Tier 2 — Relevancy Attributes (buyer-relevant)
+
+Interpretive attributes designed to be matched against a buyer's profile — fit profile, persona compatibility, occasion suitability. Published openly in the catalog, but interpretively useful only when matched against a buyer model.
+
+**The buyer model is intentionally outside the protocol.** That's the Relevancy Reasoning Layer — where AI agents compete with each other. AIRCP standardizes the data inputs to that layer without prescribing how the layer operates.
+
+This separation means AIRCP can be fully open without commoditizing agents that build proprietary buyer reasoning on top of it.
 
 ---
 
 ## What AIRCP defines
 
 1. **Discovery** — a well-known URL pattern (`https://{host}/.well-known/aircp.json`) that any agent can query to find an AIRCP-compatible catalog.
-2. **Catalog format** — a structured JSON representation of products with two tiers of attributes (Core and Enhanced).
-3. **Transaction interface** — standard methods for agents to query, add to cart, check out, and receive purchase confirmations.
+2. **Catalog format** — a structured JSON representation of products with Tier 1 (Enhanced Product) and Tier 2 (Relevancy) attributes.
+3. **Transaction hooks** — an optional minimal transaction interface for catalogs that have not yet implemented UCP. AIRCP defers to UCP for production transaction flows.
 4. **Trust layer** — a verification mechanism for merchant identity and catalog integrity.
 
 AIRCP is implementable by any catalog system. A Shopify store, an enterprise PIM, a marketplace, or a single-product brand can all expose AIRCP.
@@ -46,15 +65,28 @@ AIRCP does not require centralized registration. Any catalog publisher can expos
 
 ---
 
+## How AIRCP composes with the rest of the stack
+
+AIRCP is designed to compose with — not duplicate — the existing protocols:
+
+- **AIRCP and UCP:** An AIRCP-compliant catalog publishes the Enhanced Catalog Layer. A UCP-compliant catalog publishes the transaction layer. Merchants are encouraged to implement both. Agents should defer to UCP's checkout session format for transactions.
+- **AIRCP and AP2:** Payment authorization for AIRCP-discovered products should use AP2's Intent Mandate and Cart Mandate flow.
+- **AIRCP and A2A:** Agents implementing AIRCP discovery and reasoning can communicate with other agents via A2A.
+- **AIRCP and MCP:** A catalog can expose its AIRCP endpoint as an MCP tool, allowing MCP-aware agents to consume AIRCP-formatted product data through the MCP interface.
+
+Full composition details are in [SPEC.md Section 1.5](./SPEC.md#15-relationship-to-other-protocols).
+
+---
+
 ## Quick start for implementers
 
-Implementing AIRCP at the Core tier takes a few hours for most catalogs.
+Implementing AIRCP at the Tier 1 level takes a few hours for most catalogs.
 
 ### Minimum viable implementation
 
 1. Publish a discovery document at `https://{your-host}/.well-known/aircp.json` declaring `aircp_version: "0.1"` and your catalog endpoint.
-2. Expose a catalog endpoint that returns products with all required Core attributes (`id`, `title`, `description`, `images`, `category`, `price`, `availability`).
-3. Declare your supported capabilities (`core_attributes` at minimum).
+2. Expose a catalog endpoint that returns products with all required Tier 1 attributes (`id`, `title`, `description`, `images`, `category`, `price`, `availability`).
+3. Declare your supported capabilities (`product_attributes` at minimum).
 
 ### Example discovery document
 
@@ -65,7 +97,7 @@ Implementing AIRCP at the Core tier takes a few hours for most catalogs.
   "catalog_url": "https://example.com",
   "catalog_endpoint": "https://example.com/api/aircp/catalog",
   "product_endpoint_pattern": "https://example.com/api/aircp/product/{id}",
-  "capabilities": ["core_attributes"],
+  "capabilities": ["product_attributes"],
   "verified": false,
   "last_updated": "2026-05-12T10:00:00Z"
 }
